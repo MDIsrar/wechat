@@ -17,7 +17,12 @@ export const isSameSenderMargin = (messages, m, i, userId) => {
   else return "auto";
 };
 
-export const isSameSender = (messages, m, i, userId) => {
+export const isSameSender = (
+  messages: any,
+  m: any,
+  i: number,
+  userId: string
+) => {
   return (
     i < messages.length - 1 &&
     (messages[i + 1].sender._id !== m.sender._id ||
@@ -26,7 +31,7 @@ export const isSameSender = (messages, m, i, userId) => {
   );
 };
 
-export const isLastMessage = (messages, i, userId) => {
+export const isLastMessage = (messages: any, i: number, userId: string) => {
   return (
     i === messages.length - 1 &&
     messages[messages.length - 1].sender._id !== userId &&
@@ -34,7 +39,7 @@ export const isLastMessage = (messages, i, userId) => {
   );
 };
 
-export const isSameUser = (messages, m, i) => {
+export const isSameUser = (messages: any, m: any, i: number) => {
   return i > 0 && messages[i - 1].sender._id === m.sender._id;
 };
 
