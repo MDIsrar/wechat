@@ -23,4 +23,45 @@ app.use(notFound)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, console.log(`Server Started on PORT ${PORT}`.yellow.bold))
+const server = app.listen(PORT, console.log(`Server Started on PORT ${PORT}`.yellow.bold))
+
+const io = require("socket.io")(server, {
+    pingTimeout: 60000, // if user is not active for 60 seconds, it will be disconnected to save bandwidth
+    cors: {
+        origin: "http://localhost:5173"
+    }
+})
+
+io.on("connection", (socket) => {
+    console.log("Connected to socket.io");
+    socket.on("setup", (userData) => {
+        socket.join(userData._id)
+        socket.emit("connected")
+    })
+
+    socket.on("join chat", (room) => {
+        socket.join(room)
+        console.log("User Joined Room: " + room);
+    })
+
+    socket.on("typing", (room) => socket.in(room).emit("typing"))
+    socket.on("stop typing", (room) => socket.in(room).emit("stop typing"))
+
+    socket.on("new message", (newMessageRecieved) => {
+        var chat = newMessageRecieved.chat
+        if (!chat.users) {
+            console.log("chat.users not defined")
+            return;
+        }
+        chat.users.forEach((user) => {
+            if (user._id == newMessageRecieved.sender._id) return;
+            socket.in(user._id).emit("message recieved", newMessageRecieved);
+        })
+    })
+
+    socket.off("setup", (userData) => {
+        console.log("USER DISCONNECTED");
+        socket.leave(userData._id)
+    })
+
+})

@@ -1,4 +1,9 @@
-export const isSameSenderMargin = (messages, m, i, userId) => {
+export const isSameSenderMargin = (
+  messages: any,
+  m: any,
+  i: number,
+  userId: string
+) => {
   // console.log(i === messages.length - 1);
 
   if (

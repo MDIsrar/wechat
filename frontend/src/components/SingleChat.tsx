@@ -17,6 +17,13 @@ import Lottie from "react-lottie";
 import axios from "axios";
 import "./styles.css";
 import ScrollableChat from "./ScrollableChat";
+import io, { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "@socket.io/component-emitter";
+import AnimationData from "../animations/typing.json";
+
+const ENDPOINT = "http://localhost:5000";
+let socket: Socket<DefaultEventsMap, DefaultEventsMap>,
+  selectedChatCompare: any;
 
 const SingleChat = ({
   fetchAgain,
@@ -34,6 +41,14 @@ const SingleChat = ({
   const toast = useToast();
   const { user, selectedChat, setSelectedChat } = ChatState();
 
+  useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit("setup", user);
+    socket.on("connected", () => setSocketConnected(true));
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop typing", () => setIsTyping(false));
+  }, []);
+
   const fetchMessages = async () => {
     if (!selectedChat) return;
     try {
@@ -50,6 +65,7 @@ const SingleChat = ({
       console.log("[fetchMessages_data]", data);
       setMessages(data);
       setLoading(false);
+      socket.emit("join chat", selectedChat._id);
     } catch (error) {
       console.log("[fetchMessages_error]", error);
       toast({
@@ -64,6 +80,7 @@ const SingleChat = ({
   };
   const sendMessage = async (event: any) => {
     if (event.key === "Enter" && newMessage) {
+      socket.emit("stop typing", selectedChat._id);
       try {
         const config = {
           headers: {
@@ -80,7 +97,7 @@ const SingleChat = ({
           },
           config
         );
-        console.log("[sendMessage_data]", data);
+        socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
         console.log("[sendMessage_error]", error);
@@ -97,12 +114,52 @@ const SingleChat = ({
   };
   const typingHandler = (e: any) => {
     setNewMessage(e.target.value);
+
+    // Typing Indicator Logic
+    if (!socketConnected) return;
+    if (!typing) {
+      setTyping(true);
+      socket.emit("typing", selectedChat._id);
+    }
+
+    let lastTypingTime = new Date().getTime();
+    let timerLength = 3000;
+    setTimeout(() => {
+      let timeNow = new Date().getTime();
+      let timeDiff = timeNow - lastTypingTime;
+      if (timeDiff >= timerLength && typing) {
+        socket.emit("stop typing", selectedChat._id);
+        setTyping(false);
+      }
+    }, timerLength);
   };
 
   useEffect(() => {
+    socket.on("message recieved", (newMessageReceived) => {
+      if (
+        !selectedChatCompare ||
+        selectedChatCompare._id !== newMessageReceived.chat._id
+      ) {
+        // give notification
+      } else {
+        setMessages([...messages, newMessageReceived]);
+      }
+    });
+  });
+
+  useEffect(() => {
     fetchMessages();
+    selectedChatCompare = selectedChat;
   }, [selectedChat]);
 
+  const defaultOptions = {
+    loop: true,
+    autoPlay: true,
+    animationData: AnimationData,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
   return (
     <>
       {selectedChat ? (
@@ -176,7 +233,7 @@ const SingleChat = ({
               {istyping ? (
                 <div>
                   <Lottie
-                    options={() => {}}
+                    options={defaultOptions}
                     // height={50}
                     width={70}
                     style={{ marginBottom: 15, marginLeft: 0 }}
