@@ -39,7 +39,8 @@ const SingleChat = ({
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
   const toast = useToast();
-  const { user, selectedChat, setSelectedChat } = ChatState();
+  const { user, selectedChat, setSelectedChat, notification, setNotification } =
+    ChatState();
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -62,12 +63,10 @@ const SingleChat = ({
         `/api/message/${selectedChat._id}`,
         config
       );
-      console.log("[fetchMessages_data]", data);
       setMessages(data);
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
-      console.log("[fetchMessages_error]", error);
       toast({
         title: "Error Occured!",
         description: "Failed to send the message",
@@ -100,7 +99,6 @@ const SingleChat = ({
         socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
-        console.log("[sendMessage_error]", error);
         toast({
           title: "Error Occured!",
           description: "Failed to send the message",
@@ -141,6 +139,10 @@ const SingleChat = ({
         selectedChatCompare._id !== newMessageReceived.chat._id
       ) {
         // give notification
+        if (!notification.includes(newMessageReceived)) {
+          setNotification([newMessageReceived, ...notification]);
+          setFetchAgain(!fetchAgain);
+        }
       } else {
         setMessages([...messages, newMessageReceived]);
       }
