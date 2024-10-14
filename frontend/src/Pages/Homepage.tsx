@@ -33,7 +33,7 @@ const Homepage = () => {
         borderWidth={"1px"}
       >
         <Text fontSize={"4xl"} fontFamily={"Work sans"}>
-          Talk-A-Tive
+          We Chat
         </Text>
       </Box>
       <Box bg="white" w="100%" p={3} borderRadius="lg" borderWidth="1px">

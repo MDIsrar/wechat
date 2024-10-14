@@ -210,7 +210,7 @@ const SingleChat = ({
             w="100%"
             h="100%"
             borderRadius="lg"
-            overflowY="hidden"
+            overflowY={"hidden"}
           >
             {loading ? (
               <Spinner
@@ -221,7 +221,11 @@ const SingleChat = ({
                 margin={"auto"}
               />
             ) : (
-              <div>
+              <div
+                style={{
+                  overflow: "auto",
+                }}
+              >
                 <ScrollableChat messages={messages} />
               </div>
             )}
